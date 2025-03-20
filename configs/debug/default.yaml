@@ -33,4 +33,3 @@ train:
   max_epochs: 1
 
 data:
-  num_workers: 0 # debuggers don't like multiprocessing

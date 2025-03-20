@@ -1,14 +1,15 @@
 from pathlib import Path
 
+import jraph
 import numpy as np
 import pytest
 import reax
 
-from src.data.mnist_datamodule import MnistDataModule
+import src.data.qm9_datamodule as qm9
 
 
 @pytest.mark.parametrize("batch_size", [32, 128])
-def test_mnist_datamodule(batch_size: int) -> None:
+def test_datamodule(batch_size: int) -> None:
     """Tests `MnistDataModule` to verify that it can be downloaded correctly, that the necessary
     attributes were created (e.g., the dataloader objects), and that dtypes and batch sizes
     correctly match.
@@ -17,12 +18,11 @@ def test_mnist_datamodule(batch_size: int) -> None:
     """
     data_dir = "data/"
 
-    dm = MnistDataModule(data_dir=data_dir, batch_size=batch_size)
+    dm = qm9.Qm9DataModule(r_max=3.0, data_dir=data_dir, batch_size=batch_size)
     dm.prepare_data()
 
     assert not dm.data_train and not dm.data_val and not dm.data_test
-    assert Path(data_dir, "MNIST").exists()
-    assert Path(data_dir, "MNIST", "raw").exists()
+    assert Path(data_dir, qm9.Qm9DataModule.FILENAME).exists()
 
     stage = reax.stages.Train(None, None, [], reax.Generator(), datamodule=dm)
     dm.setup(stage)
@@ -30,11 +30,9 @@ def test_mnist_datamodule(batch_size: int) -> None:
     assert dm.train_dataloader() and dm.val_dataloader() and dm.test_dataloader()
 
     num_datapoints = len(dm.data_train) + len(dm.data_val) + len(dm.data_test)
-    assert num_datapoints == 70_000
+    assert num_datapoints == 133_885
 
-    batch = next(iter(dm.train_dataloader()))
-    x, y = batch
-    assert len(x) == batch_size
-    assert len(y) == batch_size
-    assert x.dtype == np.float32
-    assert y.dtype == np.int32
+    batch: jraph.GraphsTuple = next(iter(dm.train_dataloader()))[0]
+    assert len(batch.n_node) == batch_size + 1
+    assert batch.nodes["positions"].dtype == np.float64
+    assert batch.nodes["atomic_numbers"].dtype == np.int64

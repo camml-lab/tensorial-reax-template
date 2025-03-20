@@ -4,6 +4,7 @@ import hydra
 import omegaconf
 import reax
 import rootutils
+from tensorial.training import _module as mod
 
 rootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 # ------------------------------------------------------------------------------------ #
@@ -54,9 +55,6 @@ def train(cfg: omegaconf.DictConfig) -> tuple[dict[str, Any], dict[str, Any]]:
     log.info(f"Instantiating datamodule <{cfg.data._target_}>")
     datamodule: reax.DataModule = hydra.utils.instantiate(cfg.data)
 
-    log.info(f"Instantiating model <{cfg.model._target_}>")
-    model: reax.Module = hydra.utils.instantiate(cfg.model)
-
     log.info("Instantiating listeners...")
     listeners: list[reax.TrainerListener] = instantiate_listeners(cfg.get("listeners"))
 
@@ -65,6 +63,13 @@ def train(cfg: omegaconf.DictConfig) -> tuple[dict[str, Any], dict[str, Any]]:
 
     log.info(f"Instantiating trainer <{cfg.trainer._target_}>")
     trainer: reax.Trainer = hydra.utils.instantiate(cfg.trainer, listeners=listeners, logger=logger)
+
+    if cfg.get("from_data"):
+        log.info(f"Calculating from_data")
+        mod.calculate_stats(cfg.from_data, trainer, datamodule=datamodule)
+
+    log.info(f"Instantiating model <{cfg.model._target_}>")
+    model: reax.Module = hydra.utils.instantiate(cfg.model)
 
     object_dict = {
         "cfg": cfg,

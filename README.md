@@ -1,20 +1,20 @@
 <div align="center">
 
-# Lightning-Hydra-Template
+# tensorial-REAX-template
 
-[![python](https://img.shields.io/badge/-Python_3.8_%7C_3.9_%7C_3.10-blue?logo=python&logoColor=white)](https://github.com/pre-commit/pre-commit)
+[![python](https://img.shields.io/badge/-Python_3.9_%7C_3.9_%7C_3.10-blue?logo=python&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![hydra](https://img.shields.io/badge/Config-Hydra_1.3-89b8cd)](https://hydra.cc/)
 [![black](https://img.shields.io/badge/Code%20Style-Black-black.svg?labelColor=gray)](https://black.readthedocs.io/en/stable/)
 [![isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/) <br>
-[![tests](https://github.com/camml-lab/reax-hydra-template/actions/workflows/test.yml/badge.svg)](https://github.com/camml-lab/reax-hydra-template/actions/workflows/test.yml)
-[![code-quality](https://github.com/camml-lab/reax-hydra-template/actions/workflows/code-quality-main.yaml/badge.svg)](https://github.com/camml-lab/reax-hydra-template/actions/workflows/code-quality-main.yaml)
-[![codecov](https://codecov.io/gh/camml-lab/reax-hydra-template/branch/main/graph/badge.svg)](https://codecov.io/gh/camml-lab/reax-hydra-template) <br>
-[![license](https://img.shields.io/badge/License-MIT-green.svg?labelColor=gray)](https://github.com/camml-lab/reax-hydra-template#license)
-[![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/camml-lab/reax-hydra-template/pulls)
-[![contributors](https://img.shields.io/github/contributors/camml-lab/reax-hydra-template.svg)](https://github.com/camml-lab/reax-hydra-template/graphs/contributors)
+[![tests](https://github.com/camml-lab/tensorial-reax-template/actions/workflows/test.yml/badge.svg)](https://github.com/camml-lab/tensorial-reax-template/actions/workflows/test.yml)
+[![code-quality](https://github.com/camml-lab/tensorial-reax-template/actions/workflows/code-quality-main.yaml/badge.svg)](https://github.com/camml-lab/tensorial-reax-template/actions/workflows/code-quality-main.yaml)
+[![codecov](https://codecov.io/gh/camml-lab/tensorial-reax-template/branch/main/graph/badge.svg)](https://codecov.io/gh/camml-lab/tensorial-reax-template) <br>
+[![license](https://img.shields.io/badge/License-MIT-green.svg?labelColor=gray)](https://github.com/camml-lab/tensorial-reax-template#license)
+[![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/camml-lab/tensorial-reax-template/pulls)
+[![contributors](https://img.shields.io/github/contributors/camml-lab/tensorial-reax-template.svg)](https://github.com/camml-lab/tensorial-reax-template/graphs/contributors)
 
-A clean template to kickstart your deep learning project 🚀⚡🔥<br>
-Click on [<kbd>Use this template</kbd>](https://github.com/camml-lab/reax-hydra-template/generate) to initialize new
+A clean template to kickstart your atomistic deep learning project 🚀⚡🔥<br>
+Click on [<kbd>Use this template</kbd>](https://github.com/camml-lab/tensorial-reax-template/generate) to initialize new
 repository.
 
 _Suggestions are always welcome!_
@@ -42,7 +42,7 @@ utilities.
 
 ❌ Things break from time to time <br>
 REAX and Hydra are still evolving and integrate many libraries, which means sometimes things break. For the list of
-currently known problems visit [this page](https://github.com/camml-lab/reax-hydra-template/labels/bug).
+currently known problems visit [this page](https://github.com/camml-lab/tensorial-reax-template/labels/bug).
 
 ❌ Not adjusted for data engineering <br>
 Template is not really adjusted for building data pipelines that depend on each other. It's more efficient to use it for
@@ -61,7 +61,9 @@ For example, you can't resume hydra-based multirun or hyperparameter search.
 
 ## Main Technologies
 
-[REAX](https://github.com/muhrin/reax) - a JAX wrapper for high-performance AI research. Think of it as a framework for
+[tensorial](https://github.com/camml-lab/tensorial) - an equivariant graph neural network library.
+
+[REAX](https://github.com/camml-lab/reax) - a JAX wrapper for high-performance AI research. Think of it as a framework for
 organizing your JAX code.
 
 [Hydra](https://github.com/facebookresearch/hydra) - a framework for elegantly configuring complex applications. The key
@@ -150,8 +152,8 @@ The directory structure of new project looks like this:
 
 ```bash
 # clone project
-git clone https://github.com/camml-lab/reax-hydra-template
-cd reax-hydra-template
+git clone https://github.com/camml-lab/tensorial-reax-template
+cd tensorial-reax-template
 
 # [OPTIONAL] create conda environment
 conda create -n myenv python=3.9
@@ -166,7 +168,7 @@ When running `python src/train.py` you should see something like this:
 
 <div align="center">
 
-![](https://github.com/camml-lab/reax-hydra-template/blob/resources/terminal.png)
+![](https://github.com/camml-lab/tensorial-reax-template/blob/resources/terminal.png)
 
 </div>
 
@@ -518,7 +520,7 @@ ValueError: Specify tags before launching a multirun!
 
 This project exists thanks to all the people who contribute.
 
-![Contributors](https://readme-contributors.now.sh/muhrin/reax-hydra-template?extension=jpg&width=400&aspectRatio=1)
+![Contributors](https://readme-contributors.now.sh/muhrin/tensorial-reax-template?extension=jpg&width=400&aspectRatio=1)
 
 Have a question? Found a bug? Missing a specific feature? Feel free to file a new issue, discussion or PR with
 respective title and description.
@@ -580,8 +582,8 @@ It determines how config is composed when simply executing command `python train
 # order of defaults determines the order in which configs override each other
 defaults:
   - _self_
-  - data: mnist.yaml
-  - model: mnist.yaml
+  - data: qm9.yaml
+  - model: nequip.yaml
   - listeners: default.yaml
   - logger: null # set logger here or use command line (e.g. `python train.py logger=csv`)
   - trainer: default.yaml
@@ -647,8 +649,8 @@ For example, you can use them to version control best hyperparameters for each c
 # python train.py experiment=example
 
 defaults:
-  - override /data: mnist.yaml
-  - override /model: mnist.yaml
+  - override /data: qm9.yaml
+  - override /model: nequip.yaml
   - override /listeners: default.yaml
   - override /trainer: default.yaml
 
@@ -690,7 +692,7 @@ logger:
 **Basic workflow**
 
 1. Write your PyTorch Lightning module (see [models/mnist_module.py](src/models/mnist_module.py) for example)
-2. Write your PyTorch Lightning datamodule (see [data/mnist_datamodule.py](src/data/mnist_datamodule.py) for example)
+2. Write your PyTorch Lightning datamodule (see [data/mnist_datamodule.py](src/data/qm9_datamodule.py) for example)
 3. Write your experiment config, containing paths to model and datamodule
 4. Run training with chosen experiment config:
    ```bash

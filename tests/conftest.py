@@ -33,8 +33,6 @@ def cfg_train_global() -> DictConfig:
             if cfg.get("test"):
                 cfg.test.limit_batches = 0.1
 
-            cfg.data.num_workers = 0
-
             cfg.extras.print_config = False
             cfg.extras.enforce_tags = False
 
@@ -58,11 +56,6 @@ def cfg_eval_global() -> DictConfig:
             cfg.trainer.accelerator = "cpu"
             cfg.trainer.devices = 1
 
-            # TODO: Look at this
-            # cfg.train.max_epochs = 1
-            # cfg.test.limit_test_batches = 0.1
-
-            cfg.data.num_workers = 0
             cfg.extras.print_config = False
             cfg.extras.enforce_tags = False
             cfg.logger = None
