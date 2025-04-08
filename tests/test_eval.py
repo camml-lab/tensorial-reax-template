@@ -5,7 +5,7 @@ from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, open_dict
 import pytest
 
-from src import eval, train
+from trt import eval, train
 
 
 @pytest.mark.slow
@@ -34,5 +34,5 @@ def test_train_eval(tmp_path: Path, cfg_train: DictConfig, cfg_eval: DictConfig)
     HydraConfig().set_config(cfg_eval)
     test_metric_dict, _ = eval.evaluate(cfg_eval)
 
-    assert test_metric_dict["test/acc"] > 0.0
-    assert abs(train_metric_dict["test/acc"] - test_metric_dict["test/acc"]) < 0.001
+    assert test_metric_dict["test/loss"] > 0.0
+    assert abs(train_metric_dict["test/loss"] - test_metric_dict["test/loss"]) < 0.001

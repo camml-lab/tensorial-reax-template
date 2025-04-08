@@ -2,7 +2,7 @@
 
 # tensorial-REAX-template
 
-[![python](https://img.shields.io/badge/-Python_3.9_%7C_3.9_%7C_3.10-blue?logo=python&logoColor=white)](https://github.com/pre-commit/pre-commit)
+[![python](https://img.shields.io/badge/-Python_3.9_%7C_3.10_%7C_3.11_%7C_3.12-blue?logo=python&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![hydra](https://img.shields.io/badge/Config-Hydra_1.3-89b8cd)](https://hydra.cc/)
 [![black](https://img.shields.io/badge/Code%20Style-Black-black.svg?labelColor=gray)](https://black.readthedocs.io/en/stable/)
 [![isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/) <br>
@@ -385,22 +385,6 @@ python train.py -m data.batch_size=32,64,128 model.lr=0.001,0.0005
 </details>
 
 <details>
-<summary><b>Create a sweep over hyperparameters with Optuna</b></summary>
-
-```bash
-# this will run hyperparameter search defined in `configs/hparams_search/mnist_optuna.yaml`
-# over chosen experiment config
-python train.py -m hparams_search=mnist_optuna experiment=example
-```
-
-> **Note**: Using [Optuna Sweeper](https://hydra.cc/docs/next/plugins/optuna_sweeper) doesn't require you to add any
-> boilerplate to your code, everything is defined in a [single config file](configs/hparams_search/mnist_optuna.yaml).
-
-> **Warning**: Optuna sweeps are not failure-resistant (if one job crashes then the whole sweep crashes).
-
-</details>
-
-<details>
 <summary><b>Execute all experiments from folder</b></summary>
 
 ```bash
@@ -513,24 +497,6 @@ ValueError: Specify tags before launching a multirun!
 > **Note**: Appending lists from command line is currently not supported in hydra :(
 
 </details>
-
-<br>
-
-## ❤️  Contributions
-
-This project exists thanks to all the people who contribute.
-
-![Contributors](https://readme-contributors.now.sh/muhrin/tensorial-reax-template?extension=jpg&width=400&aspectRatio=1)
-
-Have a question? Found a bug? Missing a specific feature? Feel free to file a new issue, discussion or PR with
-respective title and description.
-
-Before making an issue, please verify that:
-
-- The problem still exists on the current `main` branch.
-- Your python dependencies are updated to recent versions.
-
-Suggestions for improvements are always welcome!
 
 <br>
 
@@ -802,68 +768,6 @@ is available or system is not windows. See the [examples](tests/test_train.py).
 
 <br>
 
-## Hyperparameter Search
-
-You can define hyperparameter search by adding new config file to [configs/hparams_search](configs/hparams_search).
-
-<details>
-<summary><b>Show example hyperparameter search config</b></summary>
-
-```yaml
-# @package _global_
-
-defaults:
-  - override /hydra/sweeper: optuna
-
-# choose metric which will be optimized by Optuna
-# make sure this is the correct name of some metric logged in lightning module!
-optimized_metric: "val/acc_best"
-
-# here we define Optuna hyperparameter search
-# it optimizes for value returned from function with @hydra.main decorator
-hydra:
-  sweeper:
-    _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
-
-    # 'minimize' or 'maximize' the objective
-    direction: maximize
-
-    # total number of runs that will be executed
-    n_trials: 20
-
-    # choose Optuna hyperparameter sampler
-    # docs: https://optuna.readthedocs.io/en/stable/reference/samplers.html
-    sampler:
-      _target_: optuna.samplers.TPESampler
-      seed: 1234
-      n_startup_trials: 10 # number of random sampling runs before optimization starts
-
-    # define hyperparameter search space
-    params:
-      model.optimizer.lr: interval(0.0001, 0.1)
-      data.batch_size: choice(32, 64, 128, 256)
-      model.net.lin1_size: choice(64, 128, 256)
-      model.net.lin2_size: choice(64, 128, 256)
-      model.net.lin3_size: choice(32, 64, 128, 256)
-```
-
-</details>
-
-Next, execute it with: `python train.py -m hparams_search=mnist_optuna`
-
-Using this approach doesn't require adding any boilerplate to code, everything is defined in a single config file. The
-only necessary thing is to return the optimized metric value from the launch file.
-
-You can use different optimization frameworks integrated with Hydra,
-like [Optuna, Ax or Nevergrad](https://hydra.cc/docs/plugins/optuna_sweeper/).
-
-The `optimization_results.yaml` will be available under `logs/task_name/multirun` folder.
-
-This approach doesn't support resuming interrupted search and advanced techniques like prunning - for more sophisticated
-search and workflows, you should probably write a dedicated optimization task (without multirun feature).
-
-<br>
-
 ## Continuous Integration
 
 Template comes with CI workflows implemented in Github Actions:
@@ -922,7 +826,7 @@ some_param: ${data.some_param}
 Another approach is to access datamodule in LightningModule directly through Trainer:
 
 ```python
-# ./src/models/mnist_module.py
+# ./src/models/tensorial_module.py
 def on_train_start(self):
     self.some_param = self.trainer.datamodule.some_param
 ```
@@ -1239,30 +1143,24 @@ Other useful repositories:
 
 ## License
 
-Lightning-Hydra-Template is licensed under the MIT License.
+tensorial-REAX-template is licensed under the GPLv3 License.
 
 ```
-MIT License
+    tensorial-reax-template: A starting point for your tensorial JAX projects
+    Copyright (C) 2025 Martin Uhrin
 
-Copyright (c) 2021 ashleve
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ```
 
 <br>

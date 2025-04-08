@@ -1,3 +1,4 @@
+import pickle
 from typing import Any
 
 import hydra
@@ -23,12 +24,12 @@ rootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 # more info: https://github.com/ashleve/rootutils
 # ------------------------------------------------------------------------------------ #
 
-from src.utils import RankedLogger, extras, instantiate_loggers, log_hyperparameters, task_wrapper
+from . import utils
 
-log = RankedLogger(__name__, rank_zero_only=True)
+log = utils.RankedLogger(__name__, rank_zero_only=True)
 
 
-@task_wrapper
+@utils.task_wrapper
 def evaluate(cfg: DictConfig) -> tuple[dict[str, Any], dict[str, Any]]:
     """Evaluates given checkpoint on a datamodule testset.
 
@@ -43,14 +44,14 @@ def evaluate(cfg: DictConfig) -> tuple[dict[str, Any], dict[str, Any]]:
     log.info(f"Instantiating datamodule <{cfg.data._target_}>")
     datamodule: reax.DataModule = hydra.utils.instantiate(cfg.data)
 
-    log.info(f"Instantiating model <{cfg.model._target_}>")
-    model: reax.Module = hydra.utils.instantiate(cfg.model)
-
     log.info("Instantiating loggers...")
-    logger: list[reax.Logger] = instantiate_loggers(cfg.get("logger"))
+    logger: list[reax.Logger] = utils.instantiate_loggers(cfg.get("logger"))
 
     log.info(f"Instantiating trainer <{cfg.trainer._target_}>")
     trainer: reax.Trainer = hydra.utils.instantiate(cfg.trainer, logger=logger)
+
+    with open(cfg.ckpt_path, "rb") as file:
+        model: reax.Module = pickle.load(file)
 
     object_dict = {
         "cfg": cfg,
@@ -62,7 +63,7 @@ def evaluate(cfg: DictConfig) -> tuple[dict[str, Any], dict[str, Any]]:
 
     if logger:
         log.info("Logging hyperparameters!")
-        log_hyperparameters(object_dict)
+        utils.log_hyperparameters(object_dict)
 
     log.info("Starting testing!")
     trainer.test(model, datamodule=datamodule, ckpt_path=cfg.ckpt_path, **cfg.get("train", {}))
@@ -83,7 +84,7 @@ def main(cfg: DictConfig) -> None:
     """
     # apply extra utilities
     # (e.g. ask for tags if none are provided in cfg, print cfg tree, etc.)
-    extras(cfg)
+    utils.extras(cfg)
 
     evaluate(cfg)
 

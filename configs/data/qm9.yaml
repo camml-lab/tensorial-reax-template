@@ -1,5 +1,5 @@
-_target_: src.data.Qm9DataModule
-r_max: 3.0
+_target_: trt.data.Qm9DataModule
+r_max: ${r_max}
 data_dir: ${paths.data_dir}
-batch_size: 128 # Needs to be divisible by the number of devices (e.g., if in a distributed setup)
+batch_size: 512 # Needs to be divisible by the number of devices (e.g., if in a distributed setup)
 train_val_test_split: [ 0.85, 0.05, 0.1 ]

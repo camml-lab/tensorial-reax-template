@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 import reax
 
-import src.data.qm9_datamodule as qm9
+from trt.data import qm9_datamodule
 
 
 @pytest.mark.parametrize("batch_size", [32, 128])
@@ -18,13 +18,15 @@ def test_datamodule(batch_size: int) -> None:
     """
     data_dir = "data/"
 
-    dm = qm9.Qm9DataModule(r_max=3.0, data_dir=data_dir, batch_size=batch_size)
+    dm = qm9_datamodule.Qm9DataModule(r_max=3.0, data_dir=data_dir, batch_size=batch_size)
     dm.prepare_data()
 
     assert not dm.data_train and not dm.data_val and not dm.data_test
-    assert Path(data_dir, qm9.Qm9DataModule.FILENAME).exists()
+    assert Path(data_dir, qm9_datamodule.Qm9DataModule.FILENAME).exists()
 
-    stage = reax.stages.Train(None, None, [], reax.Generator(), datamodule=dm)
+    stage = reax.stages.Train(
+        None, reax.data.create_manager(datamodule=dm), None, [], reax.Generator()
+    )
     dm.setup(stage)
     assert dm.data_train and dm.data_val and dm.data_test
     assert dm.train_dataloader() and dm.val_dataloader() and dm.test_dataloader()

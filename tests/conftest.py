@@ -23,6 +23,8 @@ def cfg_train_global() -> DictConfig:
         with open_dict(cfg):
             cfg.paths.root_dir = str(rootutils.find_root(indicator=".project-root"))
 
+            cfg.r_max = 3.0
+
             cfg.trainer.accelerator = "cpu"
             cfg.trainer.devices = 1
 
@@ -55,6 +57,8 @@ def cfg_eval_global() -> DictConfig:
             cfg.paths.root_dir = str(rootutils.find_root(indicator=".project-root"))
             cfg.trainer.accelerator = "cpu"
             cfg.trainer.devices = 1
+
+            cfg.r_max = 3.0
 
             cfg.extras.print_config = False
             cfg.extras.enforce_tags = False

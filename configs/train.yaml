@@ -7,7 +7,7 @@ defaults:
   - data: qm9
   - model: nequip
   - listeners: default
-  - logger: null # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
+  - logger: csv # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
   - trainer: default
   - paths: default
   - extras: default
@@ -32,21 +32,21 @@ task_name: "train"
 # overwrite from command line with `python train.py tags="[first_tag, second_tag]"`
 tags: ["dev"]
 
-r_max: 4.0
+r_max: 5.0
 
 # Gather data use by the model before training
 from_data:
    n_elements: atomic/num_species
    atomic_numbers: atomic/all_atomic_numbers
    avg_num_neighbours: atomic/avg_num_neighbours
-   energy_shifts:
-     _target_: tensorial.gcnn.atomic.EnergyContributionLstsq
-     type_map: ${from_data.atomic_numbers}
+#   energy_shifts:
+#     _target_: tensorial.gcnn.atomic.EnergyContributionLstsq
+#     type_map: ${from_data.atomic_numbers}
 
 # set False to skip model training
 train:
-  min_epochs: 1 # prevents early stopping
-  max_epochs: 10
+  min_epochs: 200 # prevents early stopping
+  max_epochs: 400
   # perform a validation loop every N training epochs
   check_val_every_n_epoch: 1
 

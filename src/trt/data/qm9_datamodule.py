@@ -159,6 +159,11 @@ class Qm9DataModule(reax.DataModule):
 
         :return: The train dataloader.
         """
+        if self.data_train is None:
+            raise reax.exceptions.MisconfigurationException(
+                "Must call setup() before requesting the dataloader"
+            )
+
         return gcnn.data.GraphLoader(
             self.data_train,
             batch_size=self._batch_size,
@@ -172,6 +177,11 @@ class Qm9DataModule(reax.DataModule):
 
         :return: The validation dataloader.
         """
+        if self.data_val is None:
+            raise reax.exceptions.MisconfigurationException(
+                "Must call setup() before requesting the dataloader"
+            )
+
         return gcnn.data.GraphLoader(
             self.data_val,
             batch_size=self.batch_size_per_device,
@@ -186,6 +196,11 @@ class Qm9DataModule(reax.DataModule):
 
         :return: The test dataloader.
         """
+        if self.data_test is None:
+            raise reax.exceptions.MisconfigurationException(
+                "Must call setup() before requesting the dataloader"
+            )
+
         return gcnn.data.GraphLoader(
             self.data_test,
             batch_size=self.batch_size_per_device,
@@ -202,7 +217,7 @@ class Qm9DataModule(reax.DataModule):
         out_file = os.path.join(self._data_dir, filename)
         if not os.path.isfile(out_file):
             urllib.request.urlretrieve(url, out_file)
-            _LOGGER.info(f"downloaded %s to %s", url, self._data_dir)
+            _LOGGER.info("downloaded %s to %s", url, self._data_dir)
 
     def _extract_tarball(self, tar_path):
         structures_dir = pathlib.Path(self._data_dir) / self.QM9_STRUCTURES
@@ -253,9 +268,9 @@ def read_qm9(file_handle):
     # Now add the properties
     for i, (label, property) in enumerate(zip(labels, properties)):
         if i == 1:
-            property = int(property)
+            property = np.array(property, dtype=int)
         elif i > 1:
-            property = float(property)
+            property = np.array(property, dtype=float)
         molecule.arrays[label] = property
 
     return molecule

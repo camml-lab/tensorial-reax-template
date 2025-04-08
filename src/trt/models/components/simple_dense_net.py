@@ -1,6 +1,5 @@
 from flax import linen
 import jax
-import jax.numpy as jnp
 
 
 class SimpleDenseNet(linen.Module):

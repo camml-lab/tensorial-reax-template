@@ -1,5 +1,6 @@
-from typing import Any, Callable, Optional, Union, cast
+from typing import Any, Callable, Final, Optional, Union, cast
 
+import beartype
 import equinox as eqx
 from flax import linen
 import jax
@@ -12,7 +13,7 @@ from typing_extensions import override
 
 __all__ = ("TensorialModule",)
 
-MetricsDict = dict[str, reax.Metric]
+MetricsDict = dict[str, Union[reax.Metric, str]]
 LossFn = Callable[[jraph.GraphsTuple, jraph.GraphsTuple], jax.Array]
 Optimizer = Union[optax.GradientTransformation, Callable[[], optax.GradientTransformation]]
 
@@ -27,13 +28,14 @@ class TensorialModule(reax.Module[jraph.GraphsTuple, jraph.GraphsTuple]):
     _metrics: Optional[reax.metrics.MetricCollection] = None
     _optimizer: Optimizer
 
+    @jt.jaxtyped(typechecker=beartype.beartype)
     def __init__(
         self,
         model: linen.Module,
         loss_fn: LossFn,
         optimizer: Optimizer,
         scheduler: Optional[optax.Schedule] = None,
-        metrics=None,
+        metrics: Optional[MetricsDict] = None,
         jit=True,
     ):
         super().__init__()
@@ -41,10 +43,12 @@ class TensorialModule(reax.Module[jraph.GraphsTuple, jraph.GraphsTuple]):
         self._loss_fn = loss_fn
         self._optimizer = optimizer
         self._scheduler = scheduler
-        self._metrics = metrics
+        self._metrics: Final[Optional[reax.metrics.MetricCollection]] = (
+            metrics if metrics is None else reax.metrics.build_collection(metrics)
+        )
         self._debug = False
         if jit:
-            self.step = eqx.filter_jit(donate="all")(self.step)
+            self.step = eqx.filter_jit(donate="all-except-first")(self.step)
             self.calculate_metrics = eqx.filter_jit(donate="all")(self.calculate_metrics)
             self._forward = eqx.filter_jit(donate="all")(self._forward)
 
@@ -87,23 +91,20 @@ class TensorialModule(reax.Module[jraph.GraphsTuple, jraph.GraphsTuple]):
     def training_step(
         self, batch: tuple[jraph.GraphsTuple, jraph.GraphsTuple], batch_idx: int, /
     ) -> tuple[jax.Array, jax.Array]:
-        inputs, outputs = batch
-        if outputs is None:
-            outputs = inputs
-
+        inputs, outputs = self._prep_batch(batch)
         (loss, metrics), grads = jax.value_and_grad(self.step, argnums=0, has_aux=True)(
             self.parameters(), inputs, outputs, self._model.apply, self._loss_fn, self._metrics
         )
         have_metrics = metrics is not None
         self.log(
-            "train.loss", loss, on_step=False, on_epoch=True, logger=True, prog_bar=not have_metrics
+            "train/loss", loss, on_step=False, on_epoch=True, logger=True, prog_bar=not have_metrics
         )
 
         if metrics:
             metrics = cast(dict[str, reax.Metric], metrics)
             for name, metric in metrics.items():
                 self.log(
-                    f"train.{name}",
+                    f"train/{name}",
                     metric,
                     on_step=False,
                     on_epoch=True,
@@ -117,23 +118,20 @@ class TensorialModule(reax.Module[jraph.GraphsTuple, jraph.GraphsTuple]):
     def validation_step(
         self, batch: tuple[jraph.GraphsTuple, jraph.GraphsTuple], batch_idx: int, /
     ):
-        inputs, outputs = batch
-        if outputs is None:
-            outputs = inputs
-
+        inputs, outputs = self._prep_batch(batch)
         loss, metrics = self.step(
             self.parameters(), inputs, outputs, self._model.apply, self._loss_fn, self._metrics
         )
         have_metrics = metrics is not None
         self.log(
-            "val.loss", loss, on_step=False, on_epoch=True, logger=True, prog_bar=not have_metrics
+            "val/loss", loss, on_step=False, on_epoch=True, logger=True, prog_bar=not have_metrics
         )
 
         if have_metrics:
             metrics = cast(reax.metrics.MetricCollection, metrics)
             for name, metric in metrics.items():
                 self.log(
-                    f"val.{name}",
+                    f"val/{name}",
                     metric,
                     on_step=False,
                     on_epoch=True,
@@ -183,3 +181,14 @@ class TensorialModule(reax.Module[jraph.GraphsTuple, jraph.GraphsTuple]):
         predictions: jraph.GraphsTuple, targets: jraph.GraphsTuple, metrics: MetricsDict
     ) -> dict[str, reax.Metric]:
         return {key: metric.create(predictions, targets) for key, metric in metrics.items()}
+
+    def _prep_batch(self, batch) -> tuple[jraph.GraphsTuple, Optional[jraph.GraphsTuple]]:
+        if isinstance(batch, jraph.GraphsTuple):
+            inputs = outputs = batch
+        else:
+            if len(batch) == 1:
+                inputs = outputs = batch[0]
+            else:
+                inputs, outputs = batch
+
+        return inputs, outputs

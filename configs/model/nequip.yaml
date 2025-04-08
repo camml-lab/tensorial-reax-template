@@ -1,4 +1,4 @@
-_target_: src.models.TensorialModule
+_target_: tensorial.ReaxModule
 
 optimizer:
   _partial_: True
@@ -11,13 +11,17 @@ scheduler:
   decay_steps: 100
 
 loss_fn:
-  - _target_: tensorial.gcnn.Loss
-    field: globals.predicted_energy
-    target_field: globals.energy
+  _target_: tensorial.gcnn.Loss
+  field: globals.predicted_energy
+  target_field: globals.energy
+
+metrics:
+  energy: atomic/energy_per_atom_rmse
+  energy_mae: atomic/energy_per_atom_mae
 
 model:
-  _target_: tensorial.config.create_module
-  module_config:
+  _target_: tensorial.nn.Sequential
+  layers:
     - _target_: tensorial.gcnn.atomic.SpeciesTransform
       atomic_numbers: ${from_data.atomic_numbers}
 
@@ -63,11 +67,10 @@ model:
       irreps_out: 1x0e
       out_field: energy # Per-atom energy
 
-    - _target_: tensorial.gcnn.atomic.per_species_rescale
-      num_types: ${from_data.n_elements}
-      scales: ${from_data.force_scale}
-      shifts: ${from_data.energy_shifts}
-      field: nodes.energy
+#    - _target_: tensorial.gcnn.atomic.per_species_rescale
+#      num_types: ${from_data.n_elements}
+#      shifts: ${from_data.energy_shifts}
+#      field: nodes.energy
 
     # Final total energy
     - _target_: tensorial.gcnn.NodewiseReduce

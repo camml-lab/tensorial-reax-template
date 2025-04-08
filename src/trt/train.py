@@ -4,7 +4,9 @@ import hydra
 import omegaconf
 import reax
 import rootutils
-from tensorial.training import _module as mod
+
+# import pyos
+
 
 rootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 # ------------------------------------------------------------------------------------ #
@@ -24,20 +26,13 @@ rootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 # more info: https://github.com/ashleve/rootutils
 # ------------------------------------------------------------------------------------ #
 
-from src.utils import (
-    RankedLogger,
-    extras,
-    get_metric_value,
-    instantiate_listeners,
-    instantiate_loggers,
-    log_hyperparameters,
-    task_wrapper,
-)
 
-log = RankedLogger(__name__, rank_zero_only=True)
+import utils
+
+log = utils.RankedLogger(__name__, rank_zero_only=True)
 
 
-@task_wrapper
+@utils.task_wrapper
 def train(cfg: omegaconf.DictConfig) -> tuple[dict[str, Any], dict[str, Any]]:
     """Trains the model. Can additionally evaluate on a testset, using best weights obtained during
     training.
@@ -48,28 +43,36 @@ def train(cfg: omegaconf.DictConfig) -> tuple[dict[str, Any], dict[str, Any]]:
     :param cfg: A DictConfig configuration composed by Hydra.
     :return: A tuple with metrics and dict with all instantiated objects.
     """
-    # set seed for random number generators in pytorch, numpy and python.random
+    # set seed for random number generators in JAX, numpy and python.random
     if cfg.get("seed"):
         reax.seed_everything(cfg.seed, workers=True)
 
+    # hist = pyos.connect("litemongo:///tmp/models.db#db")
+    # hist._autosave = True
+
     log.info(f"Instantiating datamodule <{cfg.data._target_}>")
-    datamodule: reax.DataModule = hydra.utils.instantiate(cfg.data)
+    datamodule: reax.DataModule = hydra.utils.instantiate(cfg.data, _convert_="object")
+
+    # hist.save(datamodule)
 
     log.info("Instantiating listeners...")
-    listeners: list[reax.TrainerListener] = instantiate_listeners(cfg.get("listeners"))
+    listeners: list[reax.TrainerListener] = utils.instantiate_listeners(cfg.get("listeners"))
 
     log.info("Instantiating loggers...")
-    logger: list[reax.Logger] = instantiate_loggers(cfg.get("logger"))
+    logger: list[reax.Logger] = utils.instantiate_loggers(cfg.get("logger"))
 
     log.info(f"Instantiating trainer <{cfg.trainer._target_}>")
     trainer: reax.Trainer = hydra.utils.instantiate(cfg.trainer, listeners=listeners, logger=logger)
 
     if cfg.get("from_data"):
-        log.info(f"Calculating from_data")
-        mod.calculate_stats(cfg.from_data, trainer, datamodule=datamodule)
+        trainer.run(
+            utils.from_data.FromData(
+                cfg["from_data"], trainer.strategy, trainer.rng, datamodule=datamodule
+            )
+        )
 
     log.info(f"Instantiating model <{cfg.model._target_}>")
-    model: reax.Module = hydra.utils.instantiate(cfg.model)
+    model: reax.Module = hydra.utils.instantiate(cfg.model, _convert_="object")
 
     object_dict = {
         "cfg": cfg,
@@ -82,15 +85,12 @@ def train(cfg: omegaconf.DictConfig) -> tuple[dict[str, Any], dict[str, Any]]:
 
     if logger:
         log.info("Logging hyperparameters!")
-        log_hyperparameters(object_dict)
+        utils.log_hyperparameters(object_dict)
 
     if cfg.get("train"):
         log.info("Starting training!")
         trainer.fit(
-            model,
-            datamodule=datamodule,
-            ckpt_path=cfg.get("ckpt_path"),
-            **cfg.get("train"),
+            model, datamodule=datamodule, ckpt_path=cfg.get("ckpt_path"), **cfg.get("train")
         )
 
     train_metrics = trainer.listener_metrics
@@ -116,7 +116,7 @@ def train(cfg: omegaconf.DictConfig) -> tuple[dict[str, Any], dict[str, Any]]:
     return metric_dict, object_dict
 
 
-@hydra.main(version_base="1.3", config_path="../configs", config_name="train.yaml")
+@hydra.main(version_base="1.3", config_path="../../configs", config_name="train.yaml")
 def main(cfg: omegaconf.DictConfig) -> Optional[float]:
     """Main entry point for training.
 
@@ -125,13 +125,13 @@ def main(cfg: omegaconf.DictConfig) -> Optional[float]:
     """
     # apply extra utilities
     # (e.g. ask for tags if none are provided in cfg, print cfg tree, etc.)
-    extras(cfg)
+    utils.extras(cfg)
 
     # train the model
     metric_dict, _ = train(cfg)
 
     # safely retrieve metric value for hydra-based hyperparameter optimization
-    metric_value = get_metric_value(
+    metric_value = utils.get_metric_value(
         metric_dict=metric_dict, metric_name=cfg.get("optimized_metric")
     )
 
